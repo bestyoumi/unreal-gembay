@@ -1,0 +1,45 @@
+# Visual Studio
+.vs/
+*.sln
+*.suo
+*.user
+
+# Unreal Engine project and generated files
+Binaries/
+DerivedDataCache/
+Intermediate/
+Saved/
+Build/
+
+# Python generated files
+__pycache__/
+*.pyc
+
+# IDEs
+.idea/
+.vscode/
+
+# Project Files
+*.vcxproj
+*.vcxproj.filters
+*.xcodeproj
+*.xcworkspace
+Makefile
+CMakeLists.txt
+
+# OS Files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Gemini temporary
+.gemini/tmp/
+
+# Open Source Filter (Ignore core project files)
+/Config/
+/Content/
+/Source/
+/plans/
+/*.uproject
+/.vsconfig
+/GEMINI.md
