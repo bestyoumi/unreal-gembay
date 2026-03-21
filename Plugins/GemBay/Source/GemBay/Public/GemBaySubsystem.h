@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "EditorSubsystem.h"
+#include "GemBayAction.h"
 #include "GemBaySubsystem.generated.h"
 
 /**
@@ -22,4 +23,14 @@ public:
 	/** Generates a material from parameters via Python */
 	UFUNCTION(BlueprintCallable, Category = "GemBay")
 	void GenerateMaterial(const FString& Name, const FString& JsonParams);
+
+	/** Registers a new action module for the dashboard */
+	void RegisterAction(TSharedPtr<IGemBayAction> InAction);
+
+	/** Returns all registered dashboard actions */
+	const TArray<TSharedPtr<IGemBayAction>>& GetRegisteredActions() const { return RegisteredActions; }
+
+private:
+	/** Active modular actions for the dashboard */
+	TArray<TSharedPtr<IGemBayAction>> RegisteredActions;
 };

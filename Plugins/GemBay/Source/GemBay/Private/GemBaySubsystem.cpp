@@ -32,3 +32,12 @@ void UGemBaySubsystem::GenerateMaterial(const FString& Name, const FString& Json
 		UE_LOG(LogTemp, Error, TEXT("GemBaySubsystem: Python is not available. Cannot generate material."));
 	}
 }
+
+void UGemBaySubsystem::RegisterAction(TSharedPtr<IGemBayAction> InAction)
+{
+	if (InAction.IsValid())
+	{
+		InAction->Initialize();
+		RegisteredActions.Add(InAction);
+	}
+}
