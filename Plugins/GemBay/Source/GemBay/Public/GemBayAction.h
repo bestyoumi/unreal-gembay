@@ -19,6 +19,9 @@ public:
 	/** Returns the display name of this action for the UI */
 	virtual FText GetDisplayName() const = 0;
 
+	/** Returns the description or helpful tooltip for this action */
+	virtual FText GetDescription() const { return FText::GetEmpty(); }
+
 	/** Returns the widget to be displayed in the dashboard for this action */
 	virtual TSharedRef<SWidget> GetWidget() = 0;
 

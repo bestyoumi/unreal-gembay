@@ -1,3 +1,14 @@
+$ConfigPath = Join-Path $PSScriptRoot "tools_config.json"
+if (-not (Test-Path $ConfigPath)) {
+    powershell -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot "find_tools.ps1")
+}
+$Config = Get-Content $ConfigPath | ConvertFrom-Json
+
+if (-not $Config.UEPath) {
+    Write-Host "Error: Unreal Engine path not configured. Run find_tools.ps1 first." -ForegroundColor Red
+    exit 1
+}
+
 $UProjectFile = Get-ChildItem -Path (Get-Location) -Filter "*.uproject" | Select-Object -First 1
 
 if (-not $UProjectFile) {
@@ -21,16 +32,13 @@ foreach ($ProcName in $ProcessesToKill) {
 }
 
 # 2. Re-generate Project Files
-$UVSPath = "${env:ProgramFiles(x86)}\Epic Games\Launcher\Engine\Binaries\Win64\UnrealVersionSelector.exe"
-if (-not (Test-Path $UVSPath)) {
-    $UVSPath = "${env:ProgramFiles}\Epic Games\Launcher\Engine\Binaries\Win64\UnrealVersionSelector.exe"
-}
+$UBTPath = Join-Path $Config.UEPath "Engine\Binaries\DotNET\UnrealBuildTool\UnrealBuildTool.exe"
 
-if (Test-Path $UVSPath) {
-    Write-Host "Regenerating project files with UnrealVersionSelector..." -ForegroundColor Cyan
-    Start-Process -FilePath $UVSPath -ArgumentList "/projectfiles", "`"$FullUProjectPath`"" -Wait
+if (Test-Path $UBTPath) {
+    Write-Host "Regenerating project files with UnrealBuildTool..." -ForegroundColor Cyan
+    Start-Process -FilePath $UBTPath -ArgumentList "-projectfiles", "-project=`"$FullUProjectPath`"", "-game", "-rocket", "-progress" -Wait -NoNewWindow
     Write-Host "Successfully regenerated Visual Studio project files." -ForegroundColor Green
 } else {
-    Write-Host "Error: UnrealVersionSelector.exe not found. Please manually right-click the .uproject and select 'Generate Visual Studio project files'." -ForegroundColor Red
+    Write-Host "Error: UnrealBuildTool.exe not found at $UBTPath. Please verify your Unreal Engine installation." -ForegroundColor Red
     exit 1
 }

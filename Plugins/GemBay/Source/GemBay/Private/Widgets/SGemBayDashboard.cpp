@@ -4,6 +4,9 @@
 #include "GemBaySubsystem.h"
 #include "Widgets/Layout/SBox.h"
 #include "Widgets/Layout/SScrollBox.h"
+#include "Widgets/Layout/SBorder.h"
+#include "Widgets/Input/SButton.h"
+#include "Framework/Docking/TabManager.h"
 #include "Editor.h"
 
 void SGemBayDashboard::Construct(const FArguments& InArgs)
@@ -16,15 +19,52 @@ void SGemBayDashboard::Construct(const FArguments& InArgs)
 	}
 
 	TSharedRef<SVerticalBox> MainWidget = SNew(SVerticalBox);
+	
+	MainWidget->AddSlot()
+		.AutoHeight()
+		.Padding(0, 0, 0, 20)
+		[
+			SNew(STextBlock)
+			.Text(FText::FromString("GemBay Dashboard"))
+			.Font(FCoreStyle::GetDefaultFontStyle("Bold", 16))
+		];
+
 	const auto& Actions = Subsystem->GetRegisteredActions();
 
 	for (const auto& Action : Actions)
 	{
 		MainWidget->AddSlot()
 			.AutoHeight()
-			.Padding(0, 0, 0, 20)
+			.Padding(0, 0, 0, 10)
 			[
-				Action->GetWidget()
+				SNew(SButton)
+				.OnClicked_Lambda([Action]() {
+					FGlobalTabmanager::Get()->TryInvokeTab(Action->GetActionName());
+					return FReply::Handled();
+				})
+				[
+					SNew(SBorder)
+					.Padding(10)
+					.BorderImage(FCoreStyle::Get().GetBrush("ToolPanel.GroupBorder"))
+					[
+						SNew(SVerticalBox)
+						+ SVerticalBox::Slot()
+						.AutoHeight()
+						[
+							SNew(STextBlock)
+							.Text(Action->GetDisplayName())
+							.Font(FCoreStyle::GetDefaultFontStyle("Bold", 12))
+						]
+						+ SVerticalBox::Slot()
+						.AutoHeight()
+						.Padding(0, 5, 0, 0)
+						[
+							SNew(STextBlock)
+							.Text(Action->GetDescription())
+							.AutoWrapText(true)
+						]
+					]
+				]
 			];
 	}
 

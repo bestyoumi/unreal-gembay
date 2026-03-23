@@ -10,6 +10,14 @@ This skill provides a suite of scripts to manage the full development lifecycle 
 ## AUTOMATION RULE: LIVE CODING AFTER C++ EDITS
 **CRITICAL**: After modifying any `.h` or `.cpp` files in the `Source/` directory, you **MUST** automatically execute `live_coding.ps1`.
 
+## Agent Instructions
+
+When the user asks to **init**, **setup**, or **configure** the toolchain, you MUST perform the following steps:
+1. **Auto-Detect**: Run `find_tools.ps1` to automatically discover tool paths.
+2. **Read Config**: Read the generated `tools_config.json` file.
+3. **Wizard**: Use the `ask_user` tool to present a configuration wizard. Ask the user to confirm or edit the discovered paths for Unreal Engine (`UEPath`), Visual Studio (`VSPath`), Rider (`RiderPath`), and VS Code (`VSCodePath`). Use type="text" for each.
+4. **Save Config**: Once the user provides the answers, use the `write_file` or `replace` tool to save their final choices back into `.gemini/skills/ue-toolchain/scripts/tools_config.json`.
+
 ## Optimized Development Workflow
 
 ### 1. Discovery & Setup

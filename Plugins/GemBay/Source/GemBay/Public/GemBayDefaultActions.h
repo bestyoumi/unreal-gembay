@@ -6,25 +6,22 @@
 #include "GemBayAction.h"
 
 /**
- * Action for managing and displaying installed Gemini skills.
+ * Action for dynamically loaded Gemini skills.
  */
-class FGemBaySkillsAction : public IGemBayAction
+class FGemBayDynamicSkillAction : public IGemBayAction
 {
 public:
-	virtual FName GetActionName() const override { return "Skills"; }
+	FGemBayDynamicSkillAction(const FString& InSkillName, const FString& InDescription, const FString& InUsageHints);
+
+	virtual FName GetActionName() const override;
 	virtual FText GetDisplayName() const override;
+	virtual FText GetDescription() const override;
 	virtual TSharedRef<SWidget> GetWidget() override;
-	virtual void Initialize() override;
 
 private:
-	struct FGemBaySkillInfo
-	{
-		FString Name;
-		FString Description;
-	};
-
-	void RefreshSkills();
-	TArray<FGemBaySkillInfo> AvailableSkills;
+	FString SkillName;
+	FString Description;
+	FString UsageHints;
 };
 
 /**
@@ -35,6 +32,7 @@ class FGemBayMaterialAIAction : public IGemBayAction
 public:
 	virtual FName GetActionName() const override { return "MaterialAI"; }
 	virtual FText GetDisplayName() const override;
+	virtual FText GetDescription() const override;
 	virtual TSharedRef<SWidget> GetWidget() override;
 };
 
@@ -46,5 +44,6 @@ class FGemBayPythonAction : public IGemBayAction
 public:
 	virtual FName GetActionName() const override { return "PythonBridge"; }
 	virtual FText GetDisplayName() const override;
+	virtual FText GetDescription() const override;
 	virtual TSharedRef<SWidget> GetWidget() override;
 };

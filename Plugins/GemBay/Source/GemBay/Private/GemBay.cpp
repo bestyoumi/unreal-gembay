@@ -13,6 +13,10 @@
 #include "Misc/CoreDelegates.h"
 #include "Editor.h"
 
+#include "Misc/FileHelper.h"
+#include "Misc/Paths.h"
+#include "HAL/FileManager.h"
+
 static const FName GemBayTabName("GemBayAgentSkills");
 
 #define LOCTEXT_NAMESPACE "FGemBayModule"
@@ -36,16 +40,94 @@ void FGemBayModule::OnPostEngineInit()
 {
 	if (UGemBaySubsystem* Subsystem = GEditor->GetEditorSubsystem<UGemBaySubsystem>())
 	{
-		Subsystem->RegisterAction(MakeShared<FGemBaySkillsAction>());
-		Subsystem->RegisterAction(MakeShared<FGemBayMaterialAIAction>());
-		Subsystem->RegisterAction(MakeShared<FGemBayPythonAction>());
+		auto RegisterSkill = [this, Subsystem](TSharedRef<IGemBayAction> Action)
+		{
+			Subsystem->RegisterAction(Action);
+			
+			FGlobalTabmanager::Get()->RegisterNomadTabSpawner(Action->GetActionName(), FOnSpawnTab::CreateLambda([Action](const FSpawnTabArgs& SpawnTabArgs) {
+				return SNew(SDockTab)
+					.TabRole(ETabRole::NomadTab)
+					[
+						Action->GetWidget()
+					];
+			}))
+			.SetDisplayName(Action->GetDisplayName())
+			.SetMenuType(ETabSpawnerMenuType::Hidden); // Don't show in the standard Window menu directly
+		};
+
+		// 1. Register Hardcoded Native Actions
+		RegisterSkill(MakeShared<FGemBayMaterialAIAction>());
+		RegisterSkill(MakeShared<FGemBayPythonAction>());
+
+		// 2. Dynamically Parse and Register Local Gemini Skills
+		FString SkillsDir = FPaths::ProjectDir() / TEXT(".gemini/skills/");
+		TArray<FString> SkillFolders;
+		IFileManager::Get().FindFiles(SkillFolders, *(SkillsDir / TEXT("*")), false, true);
+
+		for (const FString& Folder : SkillFolders)
+		{
+			FString SkillPath = SkillsDir / Folder / TEXT("SKILL.md");
+			FString Content;
+			if (FFileHelper::LoadFileToString(Content, *SkillPath))
+			{
+				FString SkillName = Folder;
+				FString Description;
+				FString UsageHints;
+
+				// Parse Description from YAML frontmatter
+				int32 DescStart = Content.Find(TEXT("description:"));
+				if (DescStart != INDEX_NONE)
+				{
+					DescStart += 12;
+					int32 LineEnd = Content.Find(TEXT("\n"), ESearchCase::IgnoreCase, ESearchDir::FromStart, DescStart);
+					if (LineEnd != INDEX_NONE) 
+					{ 
+						Description = Content.Mid(DescStart, LineEnd - DescStart).TrimStartAndEnd(); 
+					}
+				}
+
+				// The rest of the file is UsageHints (strip the frontmatter if present)
+				int32 ContentStart = Content.Find(TEXT("---"), ESearchCase::IgnoreCase, ESearchDir::FromStart, 3);
+				if (ContentStart != INDEX_NONE)
+				{
+					UsageHints = Content.Mid(ContentStart + 3).TrimStartAndEnd();
+				}
+				else
+				{
+					UsageHints = Content;
+				}
+
+				RegisterSkill(MakeShared<FGemBayDynamicSkillAction>(SkillName, Description, UsageHints));
+			}
+		}
 	}
 }
 
 void FGemBayModule::ShutdownModule()
 {
+	if (FSlateApplication::IsInitialized())
+	{
+		FGlobalTabmanager::Get()->UnregisterNomadTabSpawner(GemBayTabName);
+		
+		if (GEditor)
+		{
+			if (UGemBaySubsystem* Subsystem = GEditor->GetEditorSubsystem<UGemBaySubsystem>())
+			{
+				for (const auto& Action : Subsystem->GetRegisteredActions())
+				{
+					FGlobalTabmanager::Get()->UnregisterNomadTabSpawner(Action->GetActionName());
+				}
+			}
+		}
+	}
+
+	if (UObjectInitialized() && !IsEngineExitRequested())
+	{
+		UToolMenus::UnRegisterStartupCallback(this);
+		UToolMenus::UnregisterOwner(this);
+	}
+
 	FGemBayStyle::Shutdown();
-	FGlobalTabmanager::Get()->UnregisterNomadTabSpawner(GemBayTabName);
 }
 
 void FGemBayModule::RegisterMenus()
